@@ -24,43 +24,44 @@ public class GlobalExceptionHandler {
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     @ExceptionHandler(ResourceNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleResourceNotFoundException(ResourceNotFoundException ex, HttpServletRequest request) {
+    public ResponseEntity<ErrorResponse> handleResourceNotFoundException(ResourceNotFoundException ex,
+            HttpServletRequest request) {
         log.warn("Resource not found [{}]: {}", request.getRequestURI(), ex.getMessage());
         ErrorResponse errorResponse = new ErrorResponse(
                 HttpStatus.NOT_FOUND.value(),
                 HttpStatus.NOT_FOUND.getReasonPhrase(),
                 ex.getMessage(),
-                request.getRequestURI()
-        );
+                request.getRequestURI());
         return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
     }
 
     @ExceptionHandler(DuplicateResourceException.class)
-    public ResponseEntity<ErrorResponse> handleDuplicateResourceException(DuplicateResourceException ex, HttpServletRequest request) {
+    public ResponseEntity<ErrorResponse> handleDuplicateResourceException(DuplicateResourceException ex,
+            HttpServletRequest request) {
         log.warn("Duplicate resource conflict [{}]: {}", request.getRequestURI(), ex.getMessage());
         ErrorResponse errorResponse = new ErrorResponse(
                 HttpStatus.CONFLICT.value(),
                 HttpStatus.CONFLICT.getReasonPhrase(),
                 ex.getMessage(),
-                request.getRequestURI()
-        );
+                request.getRequestURI());
         return new ResponseEntity<>(errorResponse, HttpStatus.CONFLICT);
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<ErrorResponse> handleIllegalArgumentException(IllegalArgumentException ex, HttpServletRequest request) {
+    public ResponseEntity<ErrorResponse> handleIllegalArgumentException(IllegalArgumentException ex,
+            HttpServletRequest request) {
         log.warn("Invalid argument on [{}]: {}", request.getRequestURI(), ex.getMessage());
         ErrorResponse errorResponse = new ErrorResponse(
                 HttpStatus.BAD_REQUEST.value(),
                 HttpStatus.BAD_REQUEST.getReasonPhrase(),
                 ex.getMessage(),
-                request.getRequestURI()
-        );
+                request.getRequestURI());
         return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ErrorResponse> handleValidationException(MethodArgumentNotValidException ex, HttpServletRequest request) {
+    public ResponseEntity<ErrorResponse> handleValidationException(MethodArgumentNotValidException ex,
+            HttpServletRequest request) {
         Map<String, String> validationErrors = new LinkedHashMap<>();
 
         for (FieldError fieldError : ex.getBindingResult().getFieldErrors()) {
@@ -78,25 +79,25 @@ public class GlobalExceptionHandler {
                 HttpStatus.BAD_REQUEST.getReasonPhrase(),
                 "Validation failed for one or more fields",
                 request.getRequestURI(),
-                validationErrors
-        );
+                validationErrors);
         return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
-    public ResponseEntity<ErrorResponse> handleHttpMessageNotReadableException(HttpMessageNotReadableException ex, HttpServletRequest request) {
+    public ResponseEntity<ErrorResponse> handleHttpMessageNotReadableException(HttpMessageNotReadableException ex,
+            HttpServletRequest request) {
         log.warn("Malformed or unreadable request body on [{}]: {}", request.getRequestURI(), ex.getMessage());
         ErrorResponse errorResponse = new ErrorResponse(
                 HttpStatus.BAD_REQUEST.value(),
                 HttpStatus.BAD_REQUEST.getReasonPhrase(),
                 "Malformed or unreadable request body",
-                request.getRequestURI()
-        );
+                request.getRequestURI());
         return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
-    public ResponseEntity<ErrorResponse> handleMethodArgumentTypeMismatchException(MethodArgumentTypeMismatchException ex, HttpServletRequest request) {
+    public ResponseEntity<ErrorResponse> handleMethodArgumentTypeMismatchException(
+            MethodArgumentTypeMismatchException ex, HttpServletRequest request) {
         String paramName = ex.getName();
         Object value = ex.getValue();
         String message = String.format("Invalid value '%s' for parameter '%s'",
@@ -107,22 +108,57 @@ public class GlobalExceptionHandler {
                 HttpStatus.BAD_REQUEST.value(),
                 HttpStatus.BAD_REQUEST.getReasonPhrase(),
                 message,
-                request.getRequestURI()
-        );
+                request.getRequestURI());
         return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(MissingServletRequestParameterException.class)
-    public ResponseEntity<ErrorResponse> handleMissingServletRequestParameterException(MissingServletRequestParameterException ex, HttpServletRequest request) {
+    public ResponseEntity<ErrorResponse> handleMissingServletRequestParameterException(
+            MissingServletRequestParameterException ex, HttpServletRequest request) {
         String message = String.format("Required request parameter '%s' is missing", ex.getParameterName());
         log.warn("Missing parameter on [{}]: {}", request.getRequestURI(), message);
         ErrorResponse errorResponse = new ErrorResponse(
                 HttpStatus.BAD_REQUEST.value(),
                 HttpStatus.BAD_REQUEST.getReasonPhrase(),
                 message,
-                request.getRequestURI()
-        );
+                request.getRequestURI());
         return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(org.springframework.security.authentication.BadCredentialsException.class)
+    public ResponseEntity<ErrorResponse> handleBadCredentialsException(
+            org.springframework.security.authentication.BadCredentialsException ex, HttpServletRequest request) {
+        log.warn("Authentication failed on [{}]: {}", request.getRequestURI(), ex.getMessage());
+        ErrorResponse errorResponse = new ErrorResponse(
+                HttpStatus.UNAUTHORIZED.value(),
+                HttpStatus.UNAUTHORIZED.getReasonPhrase(),
+                "Invalid email or password",
+                request.getRequestURI());
+        return new ResponseEntity<>(errorResponse, HttpStatus.UNAUTHORIZED);
+    }
+
+    @ExceptionHandler(AccountDisabledException.class)
+    public ResponseEntity<ErrorResponse> handleAccountDisabledException(AccountDisabledException ex,
+            HttpServletRequest request) {
+        log.warn("Disabled/suspended account access attempt on [{}]: {}", request.getRequestURI(), ex.getMessage());
+        ErrorResponse errorResponse = new ErrorResponse(
+                HttpStatus.FORBIDDEN.value(),
+                HttpStatus.FORBIDDEN.getReasonPhrase(),
+                ex.getMessage(),
+                request.getRequestURI());
+        return new ResponseEntity<>(errorResponse, HttpStatus.FORBIDDEN);
+    }
+
+    @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleAccessDeniedException(
+            org.springframework.security.access.AccessDeniedException ex, HttpServletRequest request) {
+        log.warn("Access denied on [{}]: {}", request.getRequestURI(), ex.getMessage());
+        ErrorResponse errorResponse = new ErrorResponse(
+                HttpStatus.FORBIDDEN.value(),
+                HttpStatus.FORBIDDEN.getReasonPhrase(),
+                "Access is denied: insufficient permissions",
+                request.getRequestURI());
+        return new ResponseEntity<>(errorResponse, HttpStatus.FORBIDDEN);
     }
 
     @ExceptionHandler(Exception.class)
@@ -132,8 +168,7 @@ public class GlobalExceptionHandler {
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
                 HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase(),
                 "An unexpected internal error occurred",
-                request.getRequestURI()
-        );
+                request.getRequestURI());
         return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }

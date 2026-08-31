@@ -5,6 +5,11 @@ import com.agrilink.dto.request.CreateMandiRequest;
 import com.agrilink.dto.response.MandiResponse;
 import com.agrilink.exception.GlobalExceptionHandler;
 import com.agrilink.exception.ResourceNotFoundException;
+import com.agrilink.security.CustomUserDetailsService;
+import com.agrilink.security.JwtAccessDeniedHandler;
+import com.agrilink.security.JwtAuthenticationEntryPoint;
+import com.agrilink.security.JwtAuthenticationFilter;
+import com.agrilink.security.JwtService;
 import com.agrilink.service.MandiService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
@@ -14,6 +19,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
@@ -29,7 +35,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(MandiController.class)
-@Import({SecurityConfig.class, GlobalExceptionHandler.class})
+@Import({SecurityConfig.class, GlobalExceptionHandler.class, JwtAuthenticationFilter.class, JwtAuthenticationEntryPoint.class, JwtAccessDeniedHandler.class})
 class MandiControllerTest {
 
     @Autowired
@@ -41,8 +47,15 @@ class MandiControllerTest {
     @MockBean
     private MandiService mandiService;
 
+    @MockBean
+    private JwtService jwtService;
+
+    @MockBean
+    private CustomUserDetailsService userDetailsService;
+
     @Test
-    @DisplayName("POST /api/v1/mandis - Should create mandi and return 201")
+    @WithMockUser(roles = "ADMIN")
+    @DisplayName("POST /api/v1/mandis - Should create mandi and return 201 when ADMIN")
     void createMandi_Success() throws Exception {
         CreateMandiRequest request = new CreateMandiRequest(
                 "Koyambedu Market", "Chennai", "Tamil Nadu",
@@ -67,6 +80,7 @@ class MandiControllerTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     @DisplayName("POST /api/v1/mandis - Should return 400 when coordinates or name are invalid")
     void createMandi_ValidationFailure() throws Exception {
         CreateMandiRequest request = new CreateMandiRequest(
@@ -87,7 +101,7 @@ class MandiControllerTest {
     }
 
     @Test
-    @DisplayName("GET /api/v1/mandis - Should return all mandis")
+    @DisplayName("GET /api/v1/mandis - Should return all mandis (Public)")
     void getAllMandis_Success() throws Exception {
         MandiResponse response = new MandiResponse(
                 1L, "Koyambedu Market", "Chennai", "Tamil Nadu",
@@ -103,7 +117,7 @@ class MandiControllerTest {
     }
 
     @Test
-    @DisplayName("GET /api/v1/mandis?state=Tamil Nadu - Should return mandis in state")
+    @DisplayName("GET /api/v1/mandis?state=Tamil Nadu - Should return mandis in state (Public)")
     void getMandisByState_Success() throws Exception {
         MandiResponse response = new MandiResponse(
                 1L, "Koyambedu Market", "Chennai", "Tamil Nadu",
@@ -118,7 +132,7 @@ class MandiControllerTest {
     }
 
     @Test
-    @DisplayName("GET /api/v1/mandis?state=Tamil Nadu&district=Chennai - Should return mandis in state and district")
+    @DisplayName("GET /api/v1/mandis?state=Tamil Nadu&district=Chennai - Should return mandis in state and district (Public)")
     void getMandisByStateAndDistrict_Success() throws Exception {
         MandiResponse response = new MandiResponse(
                 1L, "Koyambedu Market", "Chennai", "Tamil Nadu",
@@ -144,7 +158,7 @@ class MandiControllerTest {
     }
 
     @Test
-    @DisplayName("GET /api/v1/mandis/{id} - Should return mandi by ID")
+    @DisplayName("GET /api/v1/mandis/{id} - Should return mandi by ID (Public)")
     void getMandiById_Success() throws Exception {
         MandiResponse response = new MandiResponse(
                 1L, "Koyambedu Market", "Chennai", "Tamil Nadu",

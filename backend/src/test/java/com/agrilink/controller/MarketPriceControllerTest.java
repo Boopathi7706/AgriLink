@@ -6,6 +6,11 @@ import com.agrilink.dto.response.MarketPriceResponse;
 import com.agrilink.dto.response.PriceDiscoveryResponse;
 import com.agrilink.exception.GlobalExceptionHandler;
 import com.agrilink.exception.ResourceNotFoundException;
+import com.agrilink.security.CustomUserDetailsService;
+import com.agrilink.security.JwtAccessDeniedHandler;
+import com.agrilink.security.JwtAuthenticationEntryPoint;
+import com.agrilink.security.JwtAuthenticationFilter;
+import com.agrilink.security.JwtService;
 import com.agrilink.service.MarketPriceService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
@@ -15,6 +20,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
@@ -31,7 +37,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(MarketPriceController.class)
-@Import({SecurityConfig.class, GlobalExceptionHandler.class})
+@Import({SecurityConfig.class, GlobalExceptionHandler.class, JwtAuthenticationFilter.class, JwtAuthenticationEntryPoint.class, JwtAccessDeniedHandler.class})
 class MarketPriceControllerTest {
 
     @Autowired
@@ -43,6 +49,12 @@ class MarketPriceControllerTest {
     @MockBean
     private MarketPriceService marketPriceService;
 
+    @MockBean
+    private JwtService jwtService;
+
+    @MockBean
+    private CustomUserDetailsService userDetailsService;
+
     private MarketPriceResponse samplePriceResponse() {
         return new MarketPriceResponse(
                 1L, 1L, "Koyambedu Market", "Chennai", "Tamil Nadu",
@@ -53,7 +65,8 @@ class MarketPriceControllerTest {
     }
 
     @Test
-    @DisplayName("POST /api/v1/market-prices - Should record price and return 201")
+    @WithMockUser(roles = "FARMER")
+    @DisplayName("POST /api/v1/market-prices - Should record price and return 201 when FARMER")
     void recordMarketPrice_Success() throws Exception {
         RecordMarketPriceRequest request = new RecordMarketPriceRequest(
                 1L, 2L,
@@ -75,6 +88,7 @@ class MarketPriceControllerTest {
     }
 
     @Test
+    @WithMockUser(roles = "FARMER")
     @DisplayName("POST /api/v1/market-prices - Should return 400 when body fails validation")
     void recordMarketPrice_ValidationFailure() throws Exception {
         RecordMarketPriceRequest request = new RecordMarketPriceRequest(
@@ -95,6 +109,7 @@ class MarketPriceControllerTest {
     }
 
     @Test
+    @WithMockUser(roles = "FARMER")
     @DisplayName("POST /api/v1/market-prices - Should return 400 when request body is malformed JSON")
     void recordMarketPrice_MalformedJson() throws Exception {
         mockMvc.perform(post("/api/v1/market-prices")
@@ -108,7 +123,7 @@ class MarketPriceControllerTest {
     }
 
     @Test
-    @DisplayName("GET /api/v1/market-prices/{id} - Should return market price by ID")
+    @DisplayName("GET /api/v1/market-prices/{id} - Should return market price by ID (Public)")
     void getMarketPriceById_Success() throws Exception {
         when(marketPriceService.getMarketPriceById(1L)).thenReturn(samplePriceResponse());
 
@@ -142,7 +157,7 @@ class MarketPriceControllerTest {
     }
 
     @Test
-    @DisplayName("GET /api/v1/market-prices/discovery - Should return price discovery aggregate")
+    @DisplayName("GET /api/v1/market-prices/discovery - Should return price discovery aggregate (Public)")
     void discoverPrice_Success() throws Exception {
         PriceDiscoveryResponse discovery = new PriceDiscoveryResponse(
                 2L, "Tomato", "Vegetables", LocalDate.of(2026, 9, 1),
@@ -180,7 +195,7 @@ class MarketPriceControllerTest {
     }
 
     @Test
-    @DisplayName("GET /api/v1/market-prices?commodityId=2 - Should return prices for commodity")
+    @DisplayName("GET /api/v1/market-prices?commodityId=2 - Should return prices for commodity (Public)")
     void getPricesByCommodity_Success() throws Exception {
         when(marketPriceService.getPricesByCommodity(2L)).thenReturn(List.of(samplePriceResponse()));
 
@@ -201,7 +216,7 @@ class MarketPriceControllerTest {
     }
 
     @Test
-    @DisplayName("GET /api/v1/market-prices?mandiId=1 - Should return prices for mandi")
+    @DisplayName("GET /api/v1/market-prices?mandiId=1 - Should return prices for mandi (Public)")
     void getPricesByMandi_Success() throws Exception {
         when(marketPriceService.getPricesByMandi(1L)).thenReturn(List.of(samplePriceResponse()));
 
@@ -211,7 +226,7 @@ class MarketPriceControllerTest {
     }
 
     @Test
-    @DisplayName("GET /api/v1/market-prices?commodityId=2&priceDate=2026-09-01 - Should return commodity prices on date")
+    @DisplayName("GET /api/v1/market-prices?commodityId=2&priceDate=2026-09-01 - Should return commodity prices on date (Public)")
     void getPricesByCommodityAndDate_Success() throws Exception {
         when(marketPriceService.getPricesByCommodityAndDate(2L, LocalDate.of(2026, 9, 1)))
                 .thenReturn(List.of(samplePriceResponse()));
@@ -224,7 +239,7 @@ class MarketPriceControllerTest {
     }
 
     @Test
-    @DisplayName("GET /api/v1/market-prices?mandiId=1&priceDate=2026-09-01 - Should return mandi prices on date")
+    @DisplayName("GET /api/v1/market-prices?mandiId=1&priceDate=2026-09-01 - Should return mandi prices on date (Public)")
     void getPricesByMandiAndDate_Success() throws Exception {
         when(marketPriceService.getPricesByMandiAndDate(1L, LocalDate.of(2026, 9, 1)))
                 .thenReturn(List.of(samplePriceResponse()));
@@ -237,7 +252,7 @@ class MarketPriceControllerTest {
     }
 
     @Test
-    @DisplayName("GET /api/v1/market-prices?commodityId=2&startDate=2026-08-01&endDate=2026-09-01 - Should return historical prices")
+    @DisplayName("GET /api/v1/market-prices?commodityId=2&startDate=2026-08-01&endDate=2026-09-01 - Should return historical prices (Public)")
     void getHistoricalPricesByCommodity_Success() throws Exception {
         when(marketPriceService.getHistoricalPricesByCommodity(2L, LocalDate.of(2026, 8, 1), LocalDate.of(2026, 9, 1)))
                 .thenReturn(List.of(samplePriceResponse()));
@@ -251,7 +266,7 @@ class MarketPriceControllerTest {
     }
 
     @Test
-    @DisplayName("GET /api/v1/market-prices?commodityId=2&mandiId=1&startDate=2026-08-01&endDate=2026-09-01 - Should return mandi commodity history")
+    @DisplayName("GET /api/v1/market-prices?commodityId=2&mandiId=1&startDate=2026-08-01&endDate=2026-09-01 - Should return mandi commodity history (Public)")
     void getHistoricalPricesByMandiAndCommodity_Success() throws Exception {
         when(marketPriceService.getHistoricalPricesByMandiAndCommodity(1L, 2L, LocalDate.of(2026, 8, 1), LocalDate.of(2026, 9, 1)))
                 .thenReturn(List.of(samplePriceResponse()));
