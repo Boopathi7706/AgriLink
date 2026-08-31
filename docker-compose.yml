@@ -1,0 +1,94 @@
+# version: '3.8'
+
+services:
+  # =================================================================
+  # Primary Database - PostgreSQL 15
+  # =================================================================
+  postgres:
+    image: postgres:15-alpine
+    container_name: agrilink-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-agrilink}
+      POSTGRES_USER: ${DATABASE_USERNAME}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - agrilink-network
+
+  # =================================================================
+  # Backend - Spring Boot Modular Monolith
+  # =================================================================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: ../docker/backend/Dockerfile
+    container_name: agrilink-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-agrilink}
+      DATABASE_USERNAME: ${DATABASE_USERNAME}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD}
+      PORT: 8080
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:5173}
+    ports:
+      - "8080:8080"
+    networks:
+      - agrilink-network
+
+  # =================================================================
+  # Future Services (Placeholders for Subsequent Phases)
+  # =================================================================
+  # redis:
+  #   image: redis:7-alpine
+  #   container_name: agrilink-redis
+  #   restart: unless-stopped
+  #   ports:
+  #     - "6379:6379"
+  #   networks:
+  #     - agrilink-network
+
+  # ml-service:
+  #   build:
+  #     context: ./ml-service
+  #     dockerfile: Dockerfile
+  #   container_name: agrilink-ml-service
+  #   restart: unless-stopped
+  #   ports:
+  #     - "8001:8001"
+  #   environment:
+  #     - DATABASE_URL=postgresql://${DATABASE_USERNAME}:${DATABASE_PASSWORD}@postgres:5432/${POSTGRES_DB:-agrilink}
+  #   networks:
+  #     - agrilink-network
+
+  # frontend:
+  #   build:
+  #     context: ./frontend
+  #     dockerfile: Dockerfile
+  #   container_name: agrilink-frontend
+  #   restart: unless-stopped
+  #   ports:
+  #     - "5173:5173"
+  #   networks:
+  #     - agrilink-network
+
+volumes:
+  postgres_data:
+    name: agrilink_postgres_data
+    driver: local
+
+networks:
+  agrilink-network:
+    driver: bridge
