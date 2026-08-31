@@ -95,6 +95,19 @@ class MarketPriceControllerTest {
     }
 
     @Test
+    @DisplayName("POST /api/v1/market-prices - Should return 400 when request body is malformed JSON")
+    void recordMarketPrice_MalformedJson() throws Exception {
+        mockMvc.perform(post("/api/v1/market-prices")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"mandiId\": 1, \"minPrice\": }"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.error").value("Bad Request"))
+                .andExpect(jsonPath("$.message").value("Malformed or unreadable request body"))
+                .andExpect(jsonPath("$.path").value("/api/v1/market-prices"));
+    }
+
+    @Test
     @DisplayName("GET /api/v1/market-prices/{id} - Should return market price by ID")
     void getMarketPriceById_Success() throws Exception {
         when(marketPriceService.getMarketPriceById(1L)).thenReturn(samplePriceResponse());
@@ -103,6 +116,17 @@ class MarketPriceControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1L))
                 .andExpect(jsonPath("$.commodityName").value("Tomato"));
+    }
+
+    @Test
+    @DisplayName("GET /api/v1/market-prices/{id} - Should return 400 when path variable is not a valid number")
+    void getMarketPriceById_InvalidPathVariableType() throws Exception {
+        mockMvc.perform(get("/api/v1/market-prices/xyz"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.error").value("Bad Request"))
+                .andExpect(jsonPath("$.message").value("Invalid value 'xyz' for parameter 'id'"))
+                .andExpect(jsonPath("$.path").value("/api/v1/market-prices/xyz"));
     }
 
     @Test
@@ -143,6 +167,19 @@ class MarketPriceControllerTest {
     }
 
     @Test
+    @DisplayName("GET /api/v1/market-prices/discovery - Should return 400 when priceDate is invalid date format")
+    void discoverPrice_InvalidDateFormat() throws Exception {
+        mockMvc.perform(get("/api/v1/market-prices/discovery")
+                        .param("commodityId", "1")
+                        .param("priceDate", "invalid-date"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.error").value("Bad Request"))
+                .andExpect(jsonPath("$.message").value("Invalid value 'invalid-date' for parameter 'priceDate'"))
+                .andExpect(jsonPath("$.path").value("/api/v1/market-prices/discovery"));
+    }
+
+    @Test
     @DisplayName("GET /api/v1/market-prices?commodityId=2 - Should return prices for commodity")
     void getPricesByCommodity_Success() throws Exception {
         when(marketPriceService.getPricesByCommodity(2L)).thenReturn(List.of(samplePriceResponse()));
@@ -150,6 +187,17 @@ class MarketPriceControllerTest {
         mockMvc.perform(get("/api/v1/market-prices").param("commodityId", "2"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].commodityId").value(2L));
+    }
+
+    @Test
+    @DisplayName("GET /api/v1/market-prices?commodityId=abc - Should return 400 when commodityId is not a number")
+    void getPricesByCommodity_InvalidParameterType() throws Exception {
+        mockMvc.perform(get("/api/v1/market-prices").param("commodityId", "abc"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.error").value("Bad Request"))
+                .andExpect(jsonPath("$.message").value("Invalid value 'abc' for parameter 'commodityId'"))
+                .andExpect(jsonPath("$.path").value("/api/v1/market-prices"));
     }
 
     @Test

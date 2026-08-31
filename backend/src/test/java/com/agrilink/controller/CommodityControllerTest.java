@@ -72,6 +72,33 @@ class CommodityControllerTest {
     }
 
     @Test
+    @DisplayName("POST /api/v1/commodities - Should return 400 when request body is empty JSON object")
+    void createCommodity_EmptyBodyValidationFailure() throws Exception {
+        mockMvc.perform(post("/api/v1/commodities")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.validationErrors.name").exists())
+                .andExpect(jsonPath("$.validationErrors.category").exists());
+    }
+
+    @Test
+    @DisplayName("POST /api/v1/commodities - Should return 400 when request body is malformed JSON")
+    void createCommodity_MalformedJson() throws Exception {
+        String malformedJson = "{\"name\": \"Tomato\", \"category\": }";
+
+        mockMvc.perform(post("/api/v1/commodities")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(malformedJson))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.error").value("Bad Request"))
+                .andExpect(jsonPath("$.message").value("Malformed or unreadable request body"))
+                .andExpect(jsonPath("$.path").value("/api/v1/commodities"));
+    }
+
+    @Test
     @DisplayName("GET /api/v1/commodities - Should return all commodities with 200")
     void getAllCommodities_Success() throws Exception {
         CommodityResponse response = new CommodityResponse(1L, "Tomato", "Vegetables", OffsetDateTime.now(), OffsetDateTime.now());
@@ -105,6 +132,17 @@ class CommodityControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1L))
                 .andExpect(jsonPath("$.name").value("Tomato"));
+    }
+
+    @Test
+    @DisplayName("GET /api/v1/commodities/{id} - Should return 400 when path variable is not a valid number")
+    void getCommodityById_InvalidPathVariableType() throws Exception {
+        mockMvc.perform(get("/api/v1/commodities/abc"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.error").value("Bad Request"))
+                .andExpect(jsonPath("$.message").value("Invalid value 'abc' for parameter 'id'"))
+                .andExpect(jsonPath("$.path").value("/api/v1/commodities/abc"));
     }
 
     @Test

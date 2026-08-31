@@ -160,6 +160,17 @@ class MandiControllerTest {
     }
 
     @Test
+    @DisplayName("GET /api/v1/mandis/{id} - Should return 400 when path variable is not a valid number")
+    void getMandiById_InvalidPathVariableType() throws Exception {
+        mockMvc.perform(get("/api/v1/mandis/invalid"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.error").value("Bad Request"))
+                .andExpect(jsonPath("$.message").value("Invalid value 'invalid' for parameter 'id'"))
+                .andExpect(jsonPath("$.path").value("/api/v1/mandis/invalid"));
+    }
+
+    @Test
     @DisplayName("GET /api/v1/mandis/{id} - Should return 404 when mandi not found")
     void getMandiById_NotFound() throws Exception {
         when(mandiService.getMandiById(eq(99L)))

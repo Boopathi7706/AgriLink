@@ -6,10 +6,14 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.mock.http.MockHttpInputMessage;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -84,6 +88,52 @@ class GlobalExceptionHandlerTest {
         assertThat(response.getBody().getMessage()).isEqualTo("Validation failed for one or more fields");
         assertThat(response.getBody().getValidationErrors()).containsEntry("name", "Mandi name is required");
         assertThat(response.getBody().getValidationErrors()).containsEntry("state", "State is required");
+    }
+
+    @Test
+    @DisplayName("Should handle HttpMessageNotReadableException and return 400 BAD_REQUEST")
+    void handleHttpMessageNotReadableException() {
+        HttpMessageNotReadableException ex = new HttpMessageNotReadableException(
+                "JSON parse error", new MockHttpInputMessage("bad json".getBytes())
+        );
+        ResponseEntity<ErrorResponse> response = exceptionHandler.handleHttpMessageNotReadableException(ex, request);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().getStatus()).isEqualTo(400);
+        assertThat(response.getBody().getError()).isEqualTo("Bad Request");
+        assertThat(response.getBody().getMessage()).isEqualTo("Malformed or unreadable request body");
+        assertThat(response.getBody().getPath()).isEqualTo("/api/v1/test");
+    }
+
+    @Test
+    @DisplayName("Should handle MethodArgumentTypeMismatchException and return 400 BAD_REQUEST")
+    void handleMethodArgumentTypeMismatchException() {
+        MethodArgumentTypeMismatchException ex = new MethodArgumentTypeMismatchException(
+                "abc", Long.class, "commodityId", null, null
+        );
+        ResponseEntity<ErrorResponse> response = exceptionHandler.handleMethodArgumentTypeMismatchException(ex, request);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().getStatus()).isEqualTo(400);
+        assertThat(response.getBody().getError()).isEqualTo("Bad Request");
+        assertThat(response.getBody().getMessage()).isEqualTo("Invalid value 'abc' for parameter 'commodityId'");
+        assertThat(response.getBody().getPath()).isEqualTo("/api/v1/test");
+    }
+
+    @Test
+    @DisplayName("Should handle MissingServletRequestParameterException and return 400 BAD_REQUEST")
+    void handleMissingServletRequestParameterException() {
+        MissingServletRequestParameterException ex = new MissingServletRequestParameterException("commodityId", "Long");
+        ResponseEntity<ErrorResponse> response = exceptionHandler.handleMissingServletRequestParameterException(ex, request);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().getStatus()).isEqualTo(400);
+        assertThat(response.getBody().getError()).isEqualTo("Bad Request");
+        assertThat(response.getBody().getMessage()).isEqualTo("Required request parameter 'commodityId' is missing");
+        assertThat(response.getBody().getPath()).isEqualTo("/api/v1/test");
     }
 
     @Test
