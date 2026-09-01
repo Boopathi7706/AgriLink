@@ -5,7 +5,7 @@ const TOKEN_KEY = 'agrilink_auth_token';
 
 // Create a centralized Axios instance
 export const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080',
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081',
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
