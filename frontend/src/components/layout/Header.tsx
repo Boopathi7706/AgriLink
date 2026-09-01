@@ -35,6 +35,10 @@ export const Header = () => {
         </Link>
 
         <div className="flex flex-1 items-center justify-end space-x-4">
+          <Link to="/market-prices" className="text-sm font-medium text-muted-foreground hover:text-primary px-2 transition-colors">
+            Market Prices
+          </Link>
+
           {isAuthenticated && user ? (
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2 text-sm font-medium">
@@ -47,13 +51,13 @@ export const Header = () => {
 
               <nav className="flex items-center space-x-2">
                 {user.role === 'FARMER' && (
-                  <Link to="/farmer" className="text-sm font-medium hover:text-primary px-2">
-                    Farmer Area
+                  <Link to="/farmer/profile" className="text-sm font-medium hover:text-primary px-2">
+                    My Profile
                   </Link>
                 )}
                 {user.role === 'BUYER' && (
-                  <Link to="/buyer" className="text-sm font-medium hover:text-primary px-2">
-                    Buyer Area
+                  <Link to="/buyer/profile" className="text-sm font-medium hover:text-primary px-2">
+                    My Profile
                   </Link>
                 )}
                 {user.role === 'ADMIN' && (

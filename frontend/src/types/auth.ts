@@ -46,6 +46,9 @@ export interface FarmerProfileResponse {
   state: string;
   pincode?: string;
   primaryCrops?: string;
+  isVerified?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface BuyerProfileResponse {
@@ -57,6 +60,9 @@ export interface BuyerProfileResponse {
   district: string;
   state: string;
   pincode?: string;
+  isVerified?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface UserResponse {

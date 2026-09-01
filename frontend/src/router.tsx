@@ -1,4 +1,4 @@
-import { createBrowserRouter } from 'react-router-dom';
+import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { AppShell } from './components/layout/AppShell';
 import { LandingPage } from './pages/LandingPage';
 import { LoginPage } from './pages/auth/LoginPage';
@@ -9,6 +9,9 @@ import { UnauthorizedPage } from './pages/UnauthorizedPage';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { RoleProtectedRoute } from './components/auth/RoleProtectedRoute';
 import { PublicOnlyRoute } from './components/auth/PublicOnlyRoute';
+import { FarmerProfilePage } from './pages/farmer/FarmerProfilePage';
+import { BuyerProfilePage } from './pages/buyer/BuyerProfilePage';
+import { MarketPricesPage } from './pages/marketPrices/MarketPricesPage';
 
 export const router = createBrowserRouter([
   {
@@ -19,6 +22,10 @@ export const router = createBrowserRouter([
       {
         index: true,
         element: <LandingPage />,
+      },
+      {
+        path: 'market-prices',
+        element: <MarketPricesPage />,
       },
       {
         element: <PublicOnlyRoute />,
@@ -45,7 +52,11 @@ export const router = createBrowserRouter([
             children: [
               {
                 path: 'farmer',
-                element: <PlaceholderPage title="Farmer Area" description="This section will be implemented in a future feature." />,
+                element: <Navigate to="/farmer/profile" replace />,
+              },
+              {
+                path: 'farmer/profile',
+                element: <FarmerProfilePage />,
               },
             ],
           },
@@ -54,7 +65,11 @@ export const router = createBrowserRouter([
             children: [
               {
                 path: 'buyer',
-                element: <PlaceholderPage title="Buyer Area" description="This section will be implemented in a future feature." />,
+                element: <Navigate to="/buyer/profile" replace />,
+              },
+              {
+                path: 'buyer/profile',
+                element: <BuyerProfilePage />,
               },
             ],
           },
@@ -72,3 +87,4 @@ export const router = createBrowserRouter([
     ],
   },
 ]);
+
