@@ -1,4 +1,7 @@
 import axios from 'axios';
+import { useAuthStore } from '@/store/useAuthStore';
+
+const TOKEN_KEY = 'agrilink_auth_token';
 
 // Create a centralized Axios instance
 export const apiClient = axios.create({
@@ -9,14 +12,13 @@ export const apiClient = axios.create({
   },
 });
 
-// Request interceptor (prepared for future auth tokens)
+// Request interceptor to attach Bearer token
 apiClient.interceptors.request.use(
   (config) => {
-    // In Phase 1, we will attach the Authorization Bearer token here
-    // const token = useAuthStore.getState().token;
-    // if (token) {
-    //   config.headers.Authorization = `Bearer ${token}`;
-    // }
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
     return config;
   },
   (error) => {
@@ -24,15 +26,13 @@ apiClient.interceptors.request.use(
   }
 );
 
-// Response interceptor (prepared for global error handling)
+// Response interceptor to handle global auth errors
 apiClient.interceptors.response.use(
-  (response) => {
-    return response;
-  },
+  (response) => response,
   (error) => {
-    // Basic error normalization structure
     if (error.response?.status === 401) {
-      // Future: handle unauthorized (e.g. redirect to login)
+      // Clear token and auth state on 401 Unauthorized
+      useAuthStore.getState().logout();
     }
     return Promise.reject(error);
   }
